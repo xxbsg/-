@@ -7,6 +7,8 @@ urlpatterns=[
     url(r'^categories/(?P<category_id>\d+)/hotskus/$',HotSKUListAPIView.as_view()),
 
     url(r'^categories/(?P<category_id>\d+)/skus/$', SKUListAPIView.as_view()),
+
+    url(r'^goodslist/$',views.GoodsListAPIView.as_view()),
 ]
 
 from rest_framework.routers import DefaultRouter
