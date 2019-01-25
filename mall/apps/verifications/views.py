@@ -76,6 +76,7 @@ class RegisterSmscodeAPIView(APIView):
 
         # 3.生成短信
         sms_code = '%06d'%random.randint(0, 999999)
+        print(sms_code)
         # 4.将短信保存到redis中
         redis_conn = get_redis_connection('code')
         redis_conn.setex('sms_' + mobile,5*60,sms_code)

@@ -38,6 +38,7 @@ from orders.models import OrderInfo
 
 GET /orders/(?P<order_id>\d+)/payment/
 """
+
 class PaymentAPIView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self,request,order_id):
