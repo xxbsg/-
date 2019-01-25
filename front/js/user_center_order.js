@@ -95,8 +95,8 @@ var vm = new Vue({
                     responseType: 'json'
                 })
                 .then(response => {
-                    this.count = response.data;
-                    this.orders = response.data;
+                    this.count = response.data.count;
+                    this.orders = response.data.results;
                     for(var i=0; i<this.orders.length; i++){
                         for(var j=0; j<this.orders[i].skus.length; j++){
                             var order = this.orders[i];

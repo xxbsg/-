@@ -96,13 +96,10 @@ class GoodsListAPIView(APIView):
     #　获取订单列表数据
         orderlist = OrderInfo.objects.filter(user_id=user.id)
 
-    # 获取商品信息
-        goodslist =
 
 
 
 
         serializer = GoodsListSerializer(orderlist,many=True)
-
 
         return Response(serializer.data)
