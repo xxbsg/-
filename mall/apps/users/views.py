@@ -346,5 +346,22 @@ class MergeLoginAPIView(ObtainJSONWebToken):
         return response
 
 
-
-
+###########################################################################
+class UserUpdatePasswordAPIView(APIView):
+    """
+    用户修改密码视图
+    PUT  /users/user_id/password/
+    """
+    permission_classes = [IsAuthenticated]
+    def put(self,request,user_id):
+        # 获取用户信息
+        user = User.objects.get(id=user_id)
+        # 接收数据
+        data = request.data
+        # 校验数据
+        serializer = UserUpdatePasswordSerializer(instance=user,data=data)
+        serializer.is_valid(raise_exception=True)
+        # 保存数据
+        serializer.save()
+        # 返回响应
+        return Response({'message':'OK'},status=status.HTTP_200_OK)
