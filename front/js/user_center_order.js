@@ -86,7 +86,7 @@ var vm = new Vue({
         get_orders: function () {
 
 
-            axios.get(this.host+'/goods/goodslist/', {
+            axios.get(this.host+'/orders/', {
 
                     headers: {
                         'Authorization': 'JWT ' + this.token
