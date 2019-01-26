@@ -125,8 +125,9 @@ class UserForgetPasswordAPIView(APIView):
             # 将token保存在redis中
             redis_conn=get_redis_connection('code')
             redis_conn.setex('%s'%token,constants.TOKEN_CODE_EXPIRE_TIME,mobile)
+            mobile_1 = mobile[0:3] + '****' + mobile[7:11]
             return Response({
-                'mobile':mobile,
+                'mobile':mobile_1,
                 'access_token':token
             })
         else:
