@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from goods.models import SKU
 from users.models import User
 from users.serializers import RegisterUserSerializer, UserCenterInfoSerializer, UserEmailInfoSerializer, \
-    AddUserBrowsingHistorySerializer, SKUSerializer
+    AddUserBrowsingHistorySerializer, SKUSerializer, UserUpdatePasswordSerializer
 from users.serializers import AddressSerializer
 from users.utils import check_token
 

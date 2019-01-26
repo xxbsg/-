@@ -277,3 +277,30 @@ class SKUSerializer(serializers.ModelSerializer):
         model = SKU
         fields = ('id', 'name', 'price', 'default_image_url', 'comments')
 
+
+##########################################################################
+class UserUpdatePasswordSerializer(serializers.Serializer):
+    """用户更改密码序列化器"""
+    # 自定义字段
+    old_password = serializers.CharField(label='密码', allow_null=False, required=True, write_only=True)
+    password = serializers.CharField(label='新密码1', allow_null=False, required=True, write_only=True)
+    password2 = serializers.CharField(label='新密码2', allow_null=False, required=True, write_only=True)
+
+
+    # 多字段校验
+    def validate(self, attrs):
+        # 获取用户提交的密码
+        password= attrs.get('password')
+        password2 = attrs.get('password2')
+        # 校验密码
+        if password != password2:
+            raise serializers.ValidationError('两次新密码不一致')
+        return attrs
+
+    def update(self,instance,validated_data):
+        if not instance.check_password(validated_data['old_password']):
+            raise serializers.ValidationError('密码错误')
+        instance.password = validated_data.get('password')
+        instance.set_password(validated_data['password'])
+        instance.save()
+        return instance
