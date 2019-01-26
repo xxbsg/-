@@ -278,7 +278,7 @@ class SKUSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'price', 'default_image_url', 'comments')
 
 
-##########################################################################
+#################################用户更改密码序列化器#########################################
 class UserUpdatePasswordSerializer(serializers.Serializer):
     """用户更改密码序列化器"""
     # 自定义字段
@@ -300,6 +300,39 @@ class UserUpdatePasswordSerializer(serializers.Serializer):
     def update(self,instance,validated_data):
         if not instance.check_password(validated_data['old_password']):
             raise serializers.ValidationError('密码错误')
+        instance.password = validated_data.get('password')
+        instance.set_password(validated_data['password'])
+        instance.save()
+        return instance
+
+
+#############################用于重设密码序列化器#############################################
+class UserResetPasswordSerializer(serializers.Serializer):
+    """用于重设密码序列化器"""
+    password = serializers.CharField(label='新密码1', allow_null=False, required=True,write_only=True)
+    password2 = serializers.CharField(label='新密码2', allow_null=False, required=True,write_only=True)
+    access_token = serializers.CharField(label='access_token',required=True,write_only=True)
+
+    # 多字段校验
+    def validate(self, attrs):
+        # 获取用户提交的密码
+        password = attrs.get('password')
+        password2 = attrs.get('password2')
+        # 校验密码
+        if password != password2:
+            raise serializers.ValidationError('两次密码不一致')
+        return attrs
+
+    def update(self, instance, validated_data):
+        # 连接redis,获取redis中的token
+        redis_conn=get_redis_connection('code')
+        redis_token = redis_conn.get('%s'%instance.id).decode()
+        # 获取前端传递的access_token
+        access_token = validated_data.get('access_token')
+        # 验证token
+        if redis_token != access_token:
+            raise serializers.ValidationError('身份验证有误')
+        # 更新密码
         instance.password = validated_data.get('password')
         instance.set_password(validated_data['password'])
         instance.save()

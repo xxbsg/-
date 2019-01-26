@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from goods.models import SKU
 from users.models import User
 from users.serializers import RegisterUserSerializer, UserCenterInfoSerializer, UserEmailInfoSerializer, \
-    AddUserBrowsingHistorySerializer, SKUSerializer, UserUpdatePasswordSerializer
+    AddUserBrowsingHistorySerializer, SKUSerializer, UserUpdatePasswordSerializer, UserResetPasswordSerializer
 from users.serializers import AddressSerializer
 from users.utils import check_token
 
@@ -346,7 +346,7 @@ class MergeLoginAPIView(ObtainJSONWebToken):
         return response
 
 
-###########################################################################
+###################################用户修改密码视图########################################
 class UserUpdatePasswordAPIView(APIView):
     """
     用户修改密码视图
@@ -365,3 +365,23 @@ class UserUpdatePasswordAPIView(APIView):
         serializer.save()
         # 返回响应
         return Response({'message':'OK'},status=status.HTTP_200_OK)
+
+
+#######################################重设密码视图######################################
+class UserResetPasswordAPIView(APIView):
+    """
+    重设密码视图
+    POST   /users/'+ this.user_id +'/passwords/
+    """
+    def post(self,request,user_id):
+        data = request.data
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'message':'用户不存在'})
+        serializer = UserResetPasswordSerializer(data=data,instance=user)
+        serializer.is_valid(raise_exception=True)
+        # 保存密码
+        serializer.save()
+        # 返回响应
+        return Response({'message':'OK'})

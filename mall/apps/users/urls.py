@@ -26,7 +26,8 @@ urlpatterns = [
     # url(r'^addresses/$',AddressViewSet.as_view()),
 
     url(r'^browerhistories/$', views.UserHistoryAPIView.as_view(), name='history'),
-
+    url(r'^(?P<user_id>\d+)/password/$', views.UserUpdatePasswordAPIView.as_view()),
+    url(r'^(?P<user_id>\d+)/passwords/$', views.UserResetPasswordAPIView.as_view())
 
 ]
 from .views import AddressViewSet
