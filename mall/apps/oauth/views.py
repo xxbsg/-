@@ -1,3 +1,5 @@
+import webbrowser
+
 from django.shortcuts import render
 
 # Create your views here.
@@ -6,9 +8,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from QQLoginTool.QQtool import OAuthQQ
 
+from libs import sinaweibopy3
 from mall import settings
-from oauth.models import OAuthQQUser
-from oauth.serializers import OAuthQQUserSerializer
+from oauth.models import OAuthQQUser, OAuthSinaUser
+from oauth.serializers import OAuthQQUserSerializer, OAuthSinaUserSerializer
 from oauth.utils import generic_open_id
 
 """
@@ -156,3 +159,105 @@ class OAuthQQUserAPIView(APIView):
             'user_id':qquser.user.id
         })
 
+
+
+class OAuthSinaUrlAPIView(APIView):
+    def get(self,request):
+        # step 1 : sign a app in weibo and then define const app key,app srcret,redirect_url
+        APP_KEY = '1084785763'
+        APP_SECRET = '49cbfb0acc4dc49b71e4db88c78c9585'
+        REDIRECT_URL = 'http://www.meiduo.site:8080/sina_callback.html'
+        # step 2 : get authorize url and code
+        global client
+        client = sinaweibopy3.APIClient(app_key=APP_KEY, app_secret=APP_SECRET, redirect_uri=REDIRECT_URL)
+        url = client.get_authorize_url()
+        return Response({'auth_url': url})
+        # print(url)
+class OAuthSinaUserAPIView(APIView):
+    def get(self, request):
+        # 1.后端接受数据
+        params = request.query_params
+        code = params.get('code')
+        if code is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+            # 2.用code换ｔｏｋｅｎ
+        try:
+            # APP_KEY = '1084785763'
+            # APP_SECRET = '49cbfb0acc4dc49b71e4db88c78c9585'
+            # REDIRECT_URL = 'http://www.meiduo.site:8080/sina_callback.html'
+            # global client = sinaweibopy3.APIClient(app_key=APP_KEY, app_secret=APP_SECRET, redirect_uri=REDIRECT_URL)
+            global client
+            result = client.request_access_token(code)  # Enter the CODE obtained in the authorized address
+            openid=result.access_token
+            # At this point, the access_token and expires_in should be saved,
+            # because there is a validity period.A
+            # If you need to send the microblog multiple times in a short time,
+            # you can use it repeatedly without having to acquire it every time.
+            # client.set_access_token(result.access_token, result.expires_in)
+            #
+            # openid=client.get.account__get_uid()
+        except ValueError:
+            return Response(status=400)
+        try:
+            sinauser = OAuthSinaUser.objects.get(access_token=openid)
+        except OAuthSinaUser.DoesNotExist:
+            #  不存在
+            # openid很重要，我们需要对openid进行一个处理
+            # 绑定应该有一个时效
+            """
+            封装和抽取的步骤
+            1. 定义一个函数
+            2. 将要抽取的代码 复制过来 哪里有问题改哪里 没有的变量定义为参数
+            3. 验证
+            """
+            # s = Serializer(secret_key=settings.SECRET_KEY, expires_in=3600)
+            #
+            # # 2. 组织数据
+            # data = {
+            #     'openid': openid
+            # }
+            #
+            # # 3. 让序列化器对数据进行处理
+            # token = s.dumps(data)
+
+            token = generic_open_id(openid)
+            return Response({'access_token': token})
+
+        else:
+            # 存在，应该让用户登录
+            from rest_framework_jwt.settings import api_settings
+
+            jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
+            jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
+
+            payload = jwt_payload_handler(sinauser.user)
+            token = jwt_encode_handler(payload)
+
+            return Response({
+                'token': token,
+                'username': sinauser.user.username,
+                'user_id': sinauser.user.id
+            })
+
+    def post(self, request):
+        # 1.接受数据
+        data = request.data
+        # 2.对数据进行效验
+        serializer = OAuthSinaUserSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        # 3.保存数据
+        sinauser = serializer.save()
+        # 4.返回响应   应该有token数据
+        from rest_framework_jwt.settings import api_settings
+
+        jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
+        jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
+
+        payload = jwt_payload_handler(sinauser.user)
+        token = jwt_encode_handler(payload)
+
+        return Response({
+            'token': token,
+            'username': sinauser.user.username,
+            'user_id': sinauser.user.id
+        })

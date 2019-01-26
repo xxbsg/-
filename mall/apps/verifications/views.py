@@ -1,5 +1,6 @@
 # verifications　　验证
 import random
+import re
 
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -8,11 +9,18 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework import request
 from rest_framework.views import APIView
+
+from celery_tasks.sms.tasks import send_sms_code
 from libs.captcha.captcha import captcha
 from django_redis import get_redis_connection
 
 from libs.yuntongxun.sms import CCP
-from verifications.serializers import RegisterSmscodeSerializer
+from oauth.utils import generic_open_id
+from users.models import User
+from verifications import constants
+
+from verifications.serializers import RegisterSmscodeSerializer, ValidateSmsCodeSerializer
+
 """
 前端传递一个uuid过来　　我们后端生成一个图片
 1.接受image_code_id
@@ -76,6 +84,7 @@ class RegisterSmscodeAPIView(APIView):
 
         # 3.生成短信
         sms_code = '%06d'%random.randint(0, 999999)
+        print(sms_code)
         # 4.将短信保存到redis中
         redis_conn = get_redis_connection('code')
         redis_conn.setex('sms_' + mobile,5*60,sms_code)
@@ -89,3 +98,95 @@ class RegisterSmscodeAPIView(APIView):
         # 6.返回响应
         return Response({'msg':'ok'})
 
+
+###################################用户忘记密码重置获取手机号视图#########################################
+class UserForgetPasswordAPIView(APIView):
+    """
+    用户忘记密码重置获取手机号视图
+    GET  '/verifications/' + this.username + '/sms/token/?text='+ this.image_code + '&image_code_id=' + this.image_code_id
+    """
+    def get(self,request,username):
+        # 获取数据
+        data = request.query_params
+        serializer = RegisterSmscodeSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            if re.match(r'1[3-9]\d{9}', username):
+                user = User.objects.get(mobile=username)
+            else:
+                user = User.objects.get(username=username)
+        except Exception as e:
+            user=None
+        if user is not None:
+            mobile = user.mobile
+            # 生成token
+            num = '%10d'%random.randint(0,9999999999)
+            token=generic_open_id(num)
+            # 将token保存在redis中
+            redis_conn=get_redis_connection('code')
+            redis_conn.setex('%s'%token,constants.TOKEN_CODE_EXPIRE_TIME,mobile)
+            return Response({
+                'mobile':mobile,
+                'access_token':token
+            })
+        else:
+            return Response({'message':'用户不存在'},status=404)
+
+###########################发送手机验证码###################################################
+class SendSmsCodeAPIView(APIView):
+    """
+    发送手机验证码
+    GET   /sms_codes/?access_token='+ this.access_token
+    """
+    def get(self,request):
+        access_token = request.query_params.get('access_token')
+        # 连接redis
+        redis_conn = get_redis_connection('code')
+        mobile = redis_conn.get(access_token).decode()
+        if mobile:
+            # 生成短信验证码
+            sms_code = '%06d' % random.randint(0, 999999)
+            send_sms_code(mobile, sms_code)
+            # 短信验证码保存在redis中
+            redis_conn.setex('sms_' + mobile, constants.SMS_CODE_EXPIRE_TIME, sms_code)
+            redis_conn.setex('sms_flag_' + mobile, 60, 1)
+            # 返回响应
+            return Response({'message':'OK'})
+        else:
+            return Response({'message':'该界面已过期'},status=400)
+
+
+##############################验证短信验证码，返回access_token###############################################
+class ValidateSmsCodeAPIView(APIView):
+    """
+    验证短信验证码，返回access_token
+    GET /verifications/' + this.username + '/password/token/?sms_code=' + this.sms_code
+    """
+    def get(self,request):
+        # 接收数据
+        params = request.query_params
+        username=params.get('username')
+        # 验证数据
+        serializer=ValidateSmsCodeSerializer(data=params)
+        serializer.is_valid(raise_exception=True)
+        try:
+            if re.match(r'1[3-9]\d{9}', username):
+                user = User.objects.get(mobile=username)
+            else:
+                user = User.objects.get(username=username)
+        except Exception as e:
+            user=None
+        if user is not None:
+            # 生成token
+            num = '%10d' % random.randint(0, 9999999999)
+            token = generic_open_id(num)
+            # 将token保存在redis中
+            redis_conn = get_redis_connection('code')
+            redis_conn.setex('%s' % user.id, constants.TOKEN_CODE_EXPIRE_TIME, token)
+            # 返回响应
+            return Response({
+                'user_id':user.id,
+                'access_token':token
+            })
+        else:
+            return Response({'message':'用户不存在'},status=404)

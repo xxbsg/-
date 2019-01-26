@@ -3,13 +3,17 @@ from django.shortcuts import render
 
 # Create your views here.
 from django_redis import get_redis_connection
+from rest_framework import mixins
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from goods.models import SKU
-from orders.serializers import OrderSKUSerializer, OrderSerializer, OrderPlaceSerializer
+from mall import settings
+
+from orders.serializers import OrderSKUSerializer, OrderSerializer, OrderPlaceSerializer, ddanxlh
+from utils.pagination import StandardResultsSetPagination
 
 """
 1.我们获取用户信息
@@ -66,7 +70,27 @@ class PlaceOrderAPIView(APIView):
 ３．数据入库
 ４．返回响应
 """
-from rest_framework.generics import CreateAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView
+from .models import OrderInfo, OrderGoods
+
+
 class OrderAPIView(CreateAPIView):
+    pagination_class = StandardResultsSetPagination
     permission_classes = [IsAuthenticated]
+
     serializer_class = OrderSerializer
+    def get(self,request):
+        user=request.user
+        oderinfos=OrderInfo.objects.filter(user_id=user.id)
+        # a=oderinfos.skus.all()
+        # # skus = OrderGoods.objects.filter(order_id=oderinfos.order_id)
+        # oderinfos.skus = a
+        #
+        # s=ddanxlh(oderinfos)
+        # s.is_valid(raise_exception=True)
+        # self.pagination_class=StandardResultsSetPagination
+        # data=self.paginator.get_paginated_response(s.data)
+        pg = StandardResultsSetPagination()
+        pager_roles = pg.paginate_queryset(queryset=oderinfos, request=request, view=self)
+        ser = ddanxlh(instance=pager_roles, many=True)
+        return pg.get_paginated_response(ser.data)
