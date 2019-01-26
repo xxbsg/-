@@ -208,3 +208,63 @@ class OrderSerializer(serializers.ModelSerializer):
         return order
 
 
+
+
+
+# 评论信息展示
+from goods.serializers import HotSKUListSerializer
+class CommentDetailSerializer(serializers.ModelSerializer):
+    sku =HotSKUListSerializer()
+    class Meta:
+        model = OrderGoods
+        fields = '__all__'
+
+# 评论界面显示
+class GoodSKUSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SKU
+        fields = ['id', 'name', 'default_image_url']
+
+class GoodsJudgeSerializer(serializers.ModelSerializer):
+    sku = GoodSKUSerializer()
+
+    class Meta:
+        model = OrderGoods
+        fields = ['id', 'price', 'score', 'is_anonymous', 'is_commented', 'sku']
+
+
+# 评论
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderGoods
+        fields = ('sku', 'order','comment','score','is_anonymous')
+        extra_kwargs = {
+            'comment': {
+                'min_length': 5,
+            }
+        }
+    # def update(self, instance, validated_data):
+    def create(self, validated_data):
+        order = validated_data['order']
+        sku = validated_data['sku']
+        comment = validated_data['comment']
+        score = validated_data['score']
+        is_anonymous = validated_data['is_anonymous']
+        OrderGoods.objects.filter(order_id=order).update(
+            order_id=order,
+            sku_id=sku,
+            comment= comment,
+            score=score,
+            is_anonymous=is_anonymous,
+            is_commented=1
+        )
+        goods = OrderGoods.objects.filter(order_id=order)
+        od = OrderInfo.objects.get(order_id=order.order_id)
+        pd = []
+        for good in goods:
+            pd.append(good.is_commented)
+        if all(pd):
+            od.status = 5
+            od.save()
+
+        return validated_data

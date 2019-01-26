@@ -94,3 +94,49 @@ class OrderAPIView(CreateAPIView):
         pager_roles = pg.paginate_queryset(queryset=oderinfos, request=request, view=self)
         ser = ddanxlh(instance=pager_roles, many=True)
         return pg.get_paginated_response(ser.data)
+
+
+
+
+
+
+# 评论信息展示
+from orders.serializers import CommentDetailSerializer
+class CommentDetailAPIView(APIView):
+    def get(self,request,sku_id):
+
+        sku_id = OrderGoods.objects.filter(sku_id=int(sku_id))
+        serializer = CommentDetailSerializer(sku_id,many=True)
+        return Response(serializer.data)
+
+
+# 评论界面显示
+from orders.models import OrderGoods
+from orders.serializers import GoodsJudgeSerializer
+
+class GoodsJudgeAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, order_id):
+
+        skus = OrderGoods.objects.filter(order_id=order_id)
+
+        serializer = GoodsJudgeSerializer(skus, many=True)
+
+        return Response(serializer.data)
+
+
+
+# 评论
+from orders.serializers import CommentSerializer
+class CommentAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request,order_id):
+
+        data = request.data
+        serializer = CommentSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
