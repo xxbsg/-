@@ -2,6 +2,7 @@ from django_redis import get_redis_connection
 from rest_framework import serializers
 
 from goods.models import SKU
+from goods.serializers import SKUIndexSerializer, HotSKUListSerializer
 from orders.models import OrderInfo, OrderGoods
 
 
@@ -16,10 +17,24 @@ class OrderPlaceSerializer(serializers.Serializer):
 
     freight = serializers.DecimalField(label='运费', max_digits=10, decimal_places=2)
     skus = OrderSKUSerializer(many=True)
-
+from rest_framework import serializers
 from django.db import transaction
+class og(serializers.ModelSerializer):
+    sku = HotSKUListSerializer()
+    class Meta:
+        model=OrderGoods
+        fields='__all__'
+class ddanxlh(serializers.ModelSerializer):
+    skus=og(many=True)
+
+    class Meta:
+        model=OrderInfo
+
+        # fields=['skus','freight',]
+        fields='__all__'
 
 class OrderSerializer(serializers.ModelSerializer):
+    # set_OrderGoods=OrderGoodsSerializer(many=True,write_only=True)
     class Meta:
         model = OrderInfo
         fields = ('order_id', 'address', 'pay_method')
@@ -191,3 +206,5 @@ class OrderSerializer(serializers.ModelSerializer):
 
         pl.execute()
         return order
+
+

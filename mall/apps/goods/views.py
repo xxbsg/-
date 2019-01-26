@@ -30,6 +30,7 @@ class HotSKUListAPIView(ListAPIView):
 
     def get_queryset(self):
         category_id = self.kwargs['category_id']
+
         return SKU.objects.filter(category_id=category_id).order_by('-sales')[:2]
         # http://127.0.0.1:8000/goods/categories/115/hotskus/
 

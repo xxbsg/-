@@ -89,7 +89,7 @@ class OAuthSinaUserSerializer(serializers.Serializer):
             raise serializers.ValidationError('openid错误')
 
         # 我们通过sttrs来传递数据
-        attrs['openid'] = openid['uid']
+        attrs['openid'] = openid
 
         # 2.需要对短信进行验证
         # 2.1获取用户提交的

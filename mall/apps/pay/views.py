@@ -80,3 +80,12 @@ class PaymentAPIView(APIView):
         alipay_url = settings.ALIPAY_URL + '?' + order_string
         # 6. 返回url
         return Response({'alipay_url':alipay_url})
+class Ddwc(APIView):
+    def put(self,request):
+        user = request.user
+        data=request.query_params
+        ddh=data.get('out_trade_no')
+        ss = OrderInfo.objects.filter(user=user)
+        for s in ss:
+            if ddh == s.order_id:
+                s.status=2

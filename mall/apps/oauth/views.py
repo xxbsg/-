@@ -168,6 +168,7 @@ class OAuthSinaUrlAPIView(APIView):
         APP_SECRET = '49cbfb0acc4dc49b71e4db88c78c9585'
         REDIRECT_URL = 'http://www.meiduo.site:8080/sina_callback.html'
         # step 2 : get authorize url and code
+        global client
         client = sinaweibopy3.APIClient(app_key=APP_KEY, app_secret=APP_SECRET, redirect_uri=REDIRECT_URL)
         url = client.get_authorize_url()
         return Response({'auth_url': url})
@@ -181,22 +182,24 @@ class OAuthSinaUserAPIView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
             # 2.用code换ｔｏｋｅｎ
         try:
-            APP_KEY = '1084785763'
-            APP_SECRET = '49cbfb0acc4dc49b71e4db88c78c9585'
-            REDIRECT_URL = 'http://www.meiduo.site:8080/sina_callback.html'
-            client = sinaweibopy3.APIClient(app_key=APP_KEY, app_secret=APP_SECRET, redirect_uri=REDIRECT_URL)
+            # APP_KEY = '1084785763'
+            # APP_SECRET = '49cbfb0acc4dc49b71e4db88c78c9585'
+            # REDIRECT_URL = 'http://www.meiduo.site:8080/sina_callback.html'
+            # global client = sinaweibopy3.APIClient(app_key=APP_KEY, app_secret=APP_SECRET, redirect_uri=REDIRECT_URL)
+            global client
             result = client.request_access_token(code)  # Enter the CODE obtained in the authorized address
-
+            openid=result.access_token
             # At this point, the access_token and expires_in should be saved,
             # because there is a validity period.A
             # If you need to send the microblog multiple times in a short time,
             # you can use it repeatedly without having to acquire it every time.
-            client.set_access_token(result.access_token, result.expires_in)
-            openid=client.get.account__get_uid()
+            # client.set_access_token(result.access_token, result.expires_in)
+            #
+            # openid=client.get.account__get_uid()
         except ValueError:
             return Response(status=400)
         try:
-            sinauser = OAuthSinaUser.objects.get(access_token=openid['uid'])
+            sinauser = OAuthSinaUser.objects.get(access_token=openid)
         except OAuthSinaUser.DoesNotExist:
             #  不存在
             # openid很重要，我们需要对openid进行一个处理
