@@ -1,10 +1,13 @@
 from django.shortcuts import render
 
 # Create your views here.
-
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from goods.models import SKU
-from goods.serializers import HotSKUListSerializer
+from goods.serializers import HotSKUListSerializer, GoodsListSerializer
+from orders.models import OrderInfo
 
 """
 表的设计思想
@@ -73,3 +76,31 @@ from .serializers import SKUIndexSerializer
 class SKUSearchViewSet(HaystackViewSet):
     index_models = [SKU]
     serializer_class = SKUIndexSerializer
+
+
+# class GoodsListVPIView(ListAPIView):
+#
+#
+#
+#     def list(self, request, *args, **kwargs):
+#         pass
+
+class GoodsListAPIView(APIView):
+
+    # 验证用户
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+    # 获取用户信息
+        user = request.user
+
+    #　获取订单列表数据
+        orderlist = OrderInfo.objects.filter(user_id=user.id)
+
+
+
+
+
+        serializer = GoodsListSerializer(orderlist,many=True)
+
+        return Response(serializer.data)

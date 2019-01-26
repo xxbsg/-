@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from goods.models import SKU
 from goods.search_indexes import SKUIndex
+from orders.models import OrderInfo, OrderGoods
 
 
 class HotSKUListSerializer(serializers.ModelSerializer):
@@ -17,3 +18,18 @@ class SKUIndexSerializer(HaystackSerializer):
     class Meta:
         index_classes = [SKUIndex]
         fields = ('text','id','name','price','default_image_url','comments')
+
+class OrderGoodsSerializer(serializers.ModelSerializer):
+
+    sku = HotSKUListSerializer()
+    class Meta:
+        model = OrderGoods
+        fields = '__all__'
+
+class GoodsListSerializer(serializers.ModelSerializer):
+
+    skus = OrderGoodsSerializer(many=True)
+
+    class Meta:
+        model = OrderInfo
+        fields = ('order_id','total_count','total_amount','pay_method','status','create_time','skus','freight')
