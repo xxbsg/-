@@ -4,6 +4,7 @@ from rest_framework import serializers
 from goods.models import SKU
 from goods.serializers import SKUIndexSerializer, HotSKUListSerializer
 from orders.models import OrderInfo, OrderGoods
+from users.serializers import UserCenterInfoSerializer
 
 
 class OrderSKUSerializer(serializers.ModelSerializer):
@@ -24,12 +25,17 @@ class og(serializers.ModelSerializer):
     class Meta:
         model=OrderGoods
         fields='__all__'
-class ddanxlh(serializers.ModelSerializer):
-    skus=og(many=True)
+class og2(serializers.ModelSerializer):
+    sku = HotSKUListSerializer()
+    username = serializers.CharField(help_text='Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.', max_length=150)
 
     class Meta:
+        model=OrderGoods
+        fields='__all__'
+class ddanxlh(serializers.ModelSerializer):
+    skus=og(many=True)
+    class Meta:
         model=OrderInfo
-
         # fields=['skus','freight',]
         fields='__all__'
 

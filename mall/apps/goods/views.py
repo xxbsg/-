@@ -7,7 +7,8 @@ from rest_framework.views import APIView
 
 from goods.models import SKU
 from goods.serializers import HotSKUListSerializer, GoodsListSerializer
-from orders.models import OrderInfo
+from orders.models import OrderInfo, OrderGoods
+from orders.serializers import ddanxlh, og, og2
 
 """
 表的设计思想
@@ -96,11 +97,13 @@ class GoodsListAPIView(APIView):
 
     #　获取订单列表数据
         orderlist = OrderInfo.objects.filter(user_id=user.id)
-
-
-
-
-
         serializer = GoodsListSerializer(orderlist,many=True)
 
         return Response(serializer.data)
+class GoodsCommentsAPIView(APIView):
+    def get(self,request,goodsid):
+        goodlist = OrderGoods.objects.filter(sku_id=int(goodsid))
+        for good in goodlist:
+            good.username = OrderInfo.objects.get(order_id=good.order_id).user.username
+        s=og2(goodlist,many=True)
+        return Response(s.data)

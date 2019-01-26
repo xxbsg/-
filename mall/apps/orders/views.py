@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from goods.models import SKU
+from goods.serializers import HotSKUListSerializer
 from mall import settings
 
 from orders.serializers import OrderSKUSerializer, OrderSerializer, OrderPlaceSerializer, ddanxlh
@@ -82,6 +83,7 @@ class OrderAPIView(CreateAPIView):
     def get(self,request):
         user=request.user
         oderinfos=OrderInfo.objects.filter(user_id=user.id)
+
         # a=oderinfos.skus.all()
         # # skus = OrderGoods.objects.filter(order_id=oderinfos.order_id)
         # oderinfos.skus = a
@@ -94,3 +96,32 @@ class OrderAPIView(CreateAPIView):
         pager_roles = pg.paginate_queryset(queryset=oderinfos, request=request, view=self)
         ser = ddanxlh(instance=pager_roles, many=True)
         return pg.get_paginated_response(ser.data)
+class shangpin(APIView):
+    def get(self,request,odid):
+        oderinfos = OrderInfo.objects.get(order_id=odid,is_commented=0)
+
+        s=ddanxlh(oderinfos)
+        return Response(s.data.get('skus'))
+class shangpinpl(APIView):
+    def post(self,request,odid):
+        data=request.data
+        try:
+            oderinfos = OrderGoods.objects.get(order_id=odid,sku_id=data.get('sku'))
+        except:
+            return Response(status=400)
+        else:
+            oderinfos.comment=data.get('comment')
+            oderinfos.is_anonymous = data.get('is_anonymous')
+            oderinfos.score = data.get('score')
+            oderinfos.is_commented=1
+            oderinfos.save()
+            goods=OrderGoods.objects.filter(order_id=odid)
+            od = OrderInfo.objects.get(order_id=odid)
+            pd=[]
+            for good in goods:
+                pd.append(good.is_commented)
+            if all(pd):
+               od.status=5
+               od.save()
+
+            return Response(status=200)

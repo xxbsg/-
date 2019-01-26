@@ -1,6 +1,3 @@
-/**
- * Created by python on 18-8-29.
- */
 var vm = new Vue({
     el: '#app',
     delimiters: ['[[', ']]'],
@@ -40,7 +37,7 @@ var vm = new Vue({
         // 添加用户浏览历史记录
         this.get_sku_id();
         if (this.user_id) {
-            axios.post(this.host+'/users/browerhistories/', {
+            axios.post(this.host+'/browse_histories/', {
                 sku_id: this.sku_id
             }, {
                 headers: {
@@ -81,29 +78,53 @@ var vm = new Vue({
             }
         },
         // 添加购物车
-        add_cart: function() {
-            axios.post(this.host + '/cart/', {
-                sku_id: parseInt(this.sku_id),
-                count: this.sku_count
-            }, {
-                headers: {
-                    'Authorization': 'JWT ' + this.token
-                },
-                responseType: 'json',
-                withCredentials: true
-            })
+        add_cart: function(){
+            axios.post(this.host+'/cart/', {
+                    sku_id: parseInt(this.sku_id),
+                    count: this.sku_count
+                }, {
+                    headers: {
+                        'Authorization': 'JWT ' + this.token
+                    },
+                    responseType: 'json',
+                    withCredentials: true
+                })
                 .then(response => {
+                    alert('添加购物车成功');
                     this.cart_total_count += response.data.count;
-                    alert('添加成功')
                 })
                 .catch(error => {
-                    alert(error.response.message[0]);
+                    if ('non_field_errors' in error.response.data) {
+                        alert(error.response.data.non_field_errors[0]);
+                    } else {
+                        alert('添加购物车失败');
+                    }
                     console.log(error.response.data);
                 })
         },
         // 获取购物车数据
         get_cart: function(){
+            axios.get(this.host+'/cart/', {
+                    headers: {
+                        'Authorization': 'JWT ' + this.token
+                    },
+                    responseType: 'json',
+                    withCredentials: true
+                })
+                .then(response => {
+                    this.cart = response.data;
+                    this.cart_total_count = 0;
+                    for(var i=0;i<this.cart.length;i++){
+                        if (this.cart[i].name.length>25){
+                            this.cart[i].name = this.cart[i].name.substring(0, 25) + '...';
+                        }
+                        this.cart_total_count += this.cart[i].count;
 
+                    }
+                })
+                .catch(error => {
+                    console.log(error.response.data);
+                })
         },
         // 获取热销商品数据
         get_hot_goods: function(){
@@ -121,8 +142,20 @@ var vm = new Vue({
                 })
         },
         // 获取商品评价信息
+        //http://api.meiduo.site:8000/goods/skus/16/comments/
         get_comments: function(){
-
+            axios.get(this.host+'/goods/skus/'+this.sku_id+'/comments/', {
+                    responseType: 'json'
+                })
+                .then(response => {
+                    this.comments = response.data;
+                    for(var i=0; i<this.comments.length; i++){
+                        this.comments[i].score_class = this.score_classes[this.comments[i].score];
+                    }
+                })
+                .catch(error => {
+                    console.log(error.response.data);
+                })
         }
     }
 });

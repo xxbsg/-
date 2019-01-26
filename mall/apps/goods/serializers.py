@@ -1,5 +1,6 @@
 from drf_haystack.serializers import HaystackSerializer
 from rest_framework import serializers
+from rest_framework.relations import PrimaryKeyRelatedField
 
 from goods.models import SKU
 from goods.search_indexes import SKUIndex

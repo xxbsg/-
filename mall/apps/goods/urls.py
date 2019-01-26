@@ -9,6 +9,8 @@ urlpatterns=[
     url(r'^categories/(?P<category_id>\d+)/skus/$', SKUListAPIView.as_view()),
 
     url(r'^goodslist/$',views.GoodsListAPIView.as_view()),
+    #http://api.meiduo.site:8000/goods/skus/16/comments/
+    url(r'^skus/(?P<goodsid>\d+)/comments/$',views.GoodsCommentsAPIView.as_view())
 ]
 
 from rest_framework.routers import DefaultRouter
