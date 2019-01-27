@@ -102,6 +102,7 @@ class shangpin(APIView):
 
         s=ddanxlh(oderinfos)
         return Response(s.data.get('skus'))
+    
 class shangpinpl(APIView):
     def post(self,request,odid):
         data=request.data

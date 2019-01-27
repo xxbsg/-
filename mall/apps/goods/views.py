@@ -91,9 +91,11 @@ class GoodsListAPIView(APIView):
     # 验证用户
     permission_classes = [IsAuthenticated]
 
+
     def get(self,request):
     # 获取用户信息
         user = request.user
+
 
     #　获取订单列表数据
         orderlist = OrderInfo.objects.filter(user_id=user.id)
