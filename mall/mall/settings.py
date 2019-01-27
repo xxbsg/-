@@ -28,9 +28,13 @@ DEBUG = True
 # 白名单允许谁跨域请求
 # CORS
 CORS_ORIGIN_WHITELIST = (
+    '127.0.0.1:8001'
     '127.0.0.1:8080',
     'localhost:8080',
-    'www.meiduo.site:8080'
+    'localhost:8081',
+    'www.meiduo.site:8080',
+
+    '127.0.0.1:8000',
 )
 CORS_ALLOW_CREDENTIALS = True  # 允许携带cookie
 
@@ -64,6 +68,7 @@ INSTALLED_APPS = [
     'django_crontab',  # 定时任务
     'haystack',   # 模块化搜索
     'orders.apps.OrdersConfig',   # 订单数据
+    'meiduo_admin'
 ]
 
 MIDDLEWARE = [
